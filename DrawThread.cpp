@@ -138,7 +138,7 @@ void DrawThread::drawCylinder(MyLink *body)
 						dBodyGetRotation(body->body),body->lz,body->lx);
 }
 
-#include <iostream>
+
 /**
 *@brief 球描画
 * @param body ボディオブジェクト
@@ -148,7 +148,6 @@ void DrawThread::drawSphere(MyLink *body)
 	dsSetColorAlpha(body->red, body->green, body->blue, 1.0);
 	dsDrawSphereD(dBodyGetPosition(body->body),
 		dBodyGetRotation(body->body), body->lz);
-	std::cout << dBodyGetPosition(body->body)[0] << "\t" << dBodyGetPosition(body->body)[1] << "\t" << dBodyGetPosition(body->body)[2] << std::endl;
 }
 
 /**
@@ -177,11 +176,21 @@ void DrawThread::drawRobot()
 		drawBox(&m_so->touchSensorLeft[3]);
 		drawBox(&m_so->touchSensorRight[3]);
 
-		drawBox(&m_so->gyroSensor);
+		drawBox(&m_so->gyroSensor[0]);
+		drawBox(&m_so->gyroSensor[1]);
+		drawBox(&m_so->gyroSensor[2]);
 		drawBox(&m_so->colourSensor);
 
 		drawBox(&m_so->mmotor);
-		
+		drawBox(&m_so->ultrasonicSensor[0]);
+		drawBox(&m_so->ultrasonicSensor[1]);
+		drawBox(&m_so->ultrasonicSensor[2]);
+
+		const double pos0[3] = { m_so->ev3.current_ultrasonicSensor_x, m_so->ev3.current_ultrasonicSensor_y, m_so->ev3.current_ultrasonicSensor_z };
+		const double pos1[3] = { m_so->ev3.current_ultrasonicSensor_x, m_so->ev3.current_ultrasonicSensor_y, m_so->ev3.current_ultrasonicSensor_z - m_so->ev3.current_ultrasonicSensorData };
+		dsDrawLine(pos0, pos1);
+
+		//drawBox(&m_so->plane);
 
 		m_so->mu.unlock();
 	}

@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ode/ode.h>
-
+#include <vector>
 
 
 #define _USE_MATH_DEFINES
@@ -33,7 +33,7 @@
 
 #define DEFAULT_BODY_X 0
 #define DEFAULT_BODY_Y 0
-#define DEFAULT_BODY_Z 0.1
+#define DEFAULT_BODY_Z (0.1)
 
 
 #define DEFAULT_BODY_MASS 0.5
@@ -121,7 +121,7 @@
 
 #define DEFAULT_ULTRASONICSENSOR_MASS 0.01
 
-
+#define DEFAULT_MAX_ULTRASONICSENSOR_DISTANCE 100.0
 
 
 
@@ -147,7 +147,25 @@ typedef struct {
   dReal    m,r,x,y,z,lx,ly,lz, the, dthe, ddthe, axisx, axisy, axisz, Tthe, Tdthe, Tddthe, tau, jx,jy,jz;
 } MyLink;
 
-
+/**
+* @class EV3_Obj
+*@brief EV3の各種データ格納クラス
+*/
+class EV3Obj
+{
+public:
+	EV3Obj();
+	void setUltrasonicSensorPos(double x, double y, double z);
+	void setColourSensorPos(double x, double y, double z);
+	double calcUltrasonicSensorDistance(double x, double y, double z);
+	double calcColourSensorDistance(double x, double y, double z);
+	double target_vx, target_vy, target_va;
+	double target_mangle;
+	double current_ultrasonicSensorData, current_colourSensorData;
+	bool right_touch, left_touch;
+	double current_ultrasonicSensor_x, current_ultrasonicSensor_y, current_ultrasonicSensor_z;
+	double current_colourSensor_x, current_colourSensor_y, current_colourSensor_z;
+};
 /**
 * @class EV3SimulatorObj
 *@brief シミュレーションの操作をするためのクラス
@@ -164,15 +182,27 @@ public:
 	*/
 	~EV3SimulatorObj();
 	coil::Mutex mu;
-	MyLink EV3Block, wheelLeft, wheelRight, wheelBall, touchSensorLeft[4], touchSensorRight[4], gyroSensor, colourSensor, mmotor, ultrasonicSensor[3];
+	MyLink EV3Block, wheelLeft, wheelRight, wheelBall, touchSensorLeft[4], touchSensorRight[4], gyroSensor[3], colourSensor, mmotor, ultrasonicSensor[3];
+	dGeomID ultrasonicSensor_ray, colourSensor_ray;
+	std::vector<MyLink> blocks;
+	MyLink plane;
 	double st;
 	double gravity;
 	bool pause;
 	dWorldID      world;       
 	dSpaceID      space;       
 	dGeomID       ground;       
-	dJointGroupID contactgroup; 
-
+	dJointGroupID contactgroup;
+	EV3Obj ev3;
+	
+	/**
+	*@brief 超音波距離センサを設定
+	*/
+	void setUltrasonicSensorRay();
+	/**
+	*@brief カラーセンサを設定
+	*/
+	void setColourSensorRay();
 	/**
 	*@brief 各パラメータの初期化を行う
 	*/
@@ -253,7 +283,15 @@ public:
 	void m_nearCallback(dGeomID o1, dGeomID o2);
 
 
-	
+	/**
+	*@brief 地面生成
+	*/
+	void makePlane(double lx, double ly, double lz);
+
+	/**
+	*@brief 障害物生成
+	*/
+	void makeBlock(double x, double y, double lx, double ly, double lz, double r);
 
 
 

@@ -4,10 +4,56 @@
 *
 */
 
+#include <iostream>
 #include "EV3SimulatorObj.h"
 
 EV3SimulatorObj *obj = NULL;
 
+EV3Obj::EV3Obj() :
+target_vx(0),
+target_vy(0),
+target_va(0),
+current_ultrasonicSensorData(0),
+current_colourSensorData(0),
+target_mangle(0),
+right_touch(false),
+left_touch(false),
+current_ultrasonicSensor_x(0),
+current_ultrasonicSensor_y(0),
+current_ultrasonicSensor_z(0),
+current_colourSensor_x(0),
+current_colourSensor_y(0),
+current_colourSensor_z(0)
+{
+
+}
+
+void EV3Obj::setUltrasonicSensorPos(double x, double y, double z)
+{
+	current_ultrasonicSensor_x = x;
+	current_ultrasonicSensor_y = y;
+	current_ultrasonicSensor_z = z;
+}
+void EV3Obj::setColourSensorPos(double x, double y, double z)
+{
+	current_colourSensor_x = x;
+	current_colourSensor_y = y;
+	current_colourSensor_z = z;
+}
+
+
+
+double EV3Obj::calcUltrasonicSensorDistance(double x, double y, double z)
+{
+	current_ultrasonicSensorData = sqrt(pow(current_ultrasonicSensor_x - x,2) + pow(current_ultrasonicSensor_y - y,2) + pow(current_ultrasonicSensor_z - z,2));
+	std::cout << current_ultrasonicSensorData << std::endl;
+	return current_ultrasonicSensorData;
+}
+double EV3Obj::calcColourSensorDistance(double x, double y, double z)
+{
+	current_colourSensorData = sqrt(pow(current_colourSensor_x - x, 2) + pow(current_colourSensor_y - y, 2) + pow(current_colourSensor_z - z, 2));
+	return current_colourSensorData;
+}
 
 /**
 *@brief シミュレーションの操作をするためのクラスのコンストラクタ
@@ -32,6 +78,7 @@ EV3SimulatorObj::EV3SimulatorObj()
 
 	makeParam();
 	makeRobot();
+	//makePlane(100,100,10);
 
 	obj = this;
 }
@@ -72,7 +119,7 @@ void EV3SimulatorObj::makeParam()
 	wheelLeft.jy = wheelLeft.y;
 	wheelLeft.jz = wheelLeft.z;
 	wheelLeft.axisx = 0;
-	wheelLeft.axisy = 1;
+	wheelLeft.axisy = -1;
 	wheelLeft.axisz = 0;
 	wheelLeft.red = 1.;
 	wheelLeft.green = 1.;
@@ -88,7 +135,7 @@ void EV3SimulatorObj::makeParam()
 	wheelRight.jy = wheelRight.y;
 	wheelRight.jz = wheelRight.z;
 	wheelRight.axisx = 0;
-	wheelRight.axisy = 1;
+	wheelRight.axisy = -1;
 	wheelRight.axisz = 0;
 	wheelRight.red = 1.;
 	wheelRight.green = 1.;
@@ -205,17 +252,42 @@ void EV3SimulatorObj::makeParam()
 	touchSensorRight[3].green = 1.;
 	touchSensorRight[3].blue = 0.;
 
+	double gyro_stick_length = ((DEFAULT_BODY_X - DEFAULT_BODY_LENGTH / 2.0) - DEFAULT_GYROSENSOR_X);
+	gyroSensor[0].m = DEFAULT_GYROSENSOR_MASS;
+	gyroSensor[0].lx = gyro_stick_length / cos(DEFAULT_STICK_RADIUS);
+	gyroSensor[0].ly = DEFAULT_STICK_WIDTH;
+	gyroSensor[0].lz = DEFAULT_STICK_WIDTH;
+	gyroSensor[0].x = DEFAULT_BODY_X - DEFAULT_BODY_LENGTH / 2.0 - gyroSensor[0].lx * cos(DEFAULT_STICK_RADIUS) / 2.0;
+	gyroSensor[0].y = DEFAULT_GYROSENSOR_Y;
+	gyroSensor[0].z = DEFAULT_BODY_Z + gyroSensor[0].lx * sin(DEFAULT_STICK_RADIUS) / 2.0;
+	gyroSensor[0].red = 1.;
+	gyroSensor[0].green = 1.;
+	gyroSensor[0].blue = 0.;
 
-	gyroSensor.m = DEFAULT_GYROSENSOR_MASS;
-	gyroSensor.lx = DEFAULT_GYROSENSOR_LENGTH;
-	gyroSensor.ly = DEFAULT_GYROSENSOR_WIDTH;
-	gyroSensor.lz = DEFAULT_GYROSENSOR_HEIGHT;
-	gyroSensor.x = DEFAULT_GYROSENSOR_X;
-	gyroSensor.y = DEFAULT_GYROSENSOR_Y;
-	gyroSensor.z = DEFAULT_GYROSENSOR_Z;
-	gyroSensor.red = 1.;
-	gyroSensor.green = 1.;
-	gyroSensor.blue = 0.;
+	gyroSensor[1].m = DEFAULT_GYROSENSOR_MASS;
+	gyroSensor[1].lx = DEFAULT_STICK_WIDTH;
+	gyroSensor[1].ly = DEFAULT_STICK_WIDTH;
+	gyroSensor[1].lz = (DEFAULT_GYROSENSOR_Z - DEFAULT_GYROSENSOR_HEIGHT/2.0) - gyroSensor[0].z - gyroSensor[0].lx * sin(DEFAULT_STICK_RADIUS) / 2.0;
+	gyroSensor[1].x = DEFAULT_GYROSENSOR_X;
+	gyroSensor[1].y = DEFAULT_GYROSENSOR_Y;
+	gyroSensor[1].z = DEFAULT_GYROSENSOR_Z - gyroSensor[1].lz / 2.0 - DEFAULT_GYROSENSOR_HEIGHT/2.0;
+	gyroSensor[1].red = 1.;
+	gyroSensor[1].green = 1.;
+	gyroSensor[1].blue = 0.;
+
+	gyroSensor[2].m = DEFAULT_GYROSENSOR_MASS;
+	gyroSensor[2].lx = DEFAULT_GYROSENSOR_LENGTH;
+	gyroSensor[2].ly = DEFAULT_GYROSENSOR_WIDTH;
+	gyroSensor[2].lz = DEFAULT_GYROSENSOR_HEIGHT;
+	gyroSensor[2].x = DEFAULT_GYROSENSOR_X;
+	gyroSensor[2].y = DEFAULT_GYROSENSOR_Y;
+	gyroSensor[2].z = DEFAULT_GYROSENSOR_Z;
+	gyroSensor[2].red = 1.;
+	gyroSensor[2].green = 1.;
+	gyroSensor[2].blue = 0.;
+
+	
+
 
 
 	colourSensor.m = DEFAULT_COLOURSENSOR_MASS;
@@ -239,6 +311,46 @@ void EV3SimulatorObj::makeParam()
 	mmotor.red = 1.;
 	mmotor.green = 1.;
 	mmotor.blue = 0.;
+
+	ultrasonicSensor[0].m = DEFAULT_ULTRASONICSENSOR_MASS;
+	ultrasonicSensor[0].lx = DEFAULT_STICK_WIDTH;
+	ultrasonicSensor[0].ly = DEFAULT_STICK_WIDTH;
+	ultrasonicSensor[0].lz = DEFAULT_ULTRASONICSENSOR_Z - (DEFAULT_MMOTOR_Z + DEFAULT_MMOTOR_HEIGHT/2.0);
+	ultrasonicSensor[0].x = DEFAULT_MMOTOR_X;
+	ultrasonicSensor[0].y = DEFAULT_MMOTOR_Y;
+	ultrasonicSensor[0].z = DEFAULT_MMOTOR_Z + DEFAULT_MMOTOR_HEIGHT / 2.0 + ultrasonicSensor[0].lz / 2.0;
+	ultrasonicSensor[0].jx = DEFAULT_MMOTOR_X;
+	ultrasonicSensor[0].jy = DEFAULT_MMOTOR_Y;
+	ultrasonicSensor[0].jz = DEFAULT_MMOTOR_Z;
+	ultrasonicSensor[0].axisx = 0;
+	ultrasonicSensor[0].axisy = 0;
+	ultrasonicSensor[0].axisz = -1;
+	ultrasonicSensor[0].red = 1.;
+	ultrasonicSensor[0].green = 1.;
+	ultrasonicSensor[0].blue = 0.;
+
+
+	ultrasonicSensor[1].m = DEFAULT_ULTRASONICSENSOR_MASS;
+	ultrasonicSensor[1].lx = (DEFAULT_ULTRASONICSENSOR_X - DEFAULT_ULTRASONICSENSOR_LENGTH / 2.0) - DEFAULT_MMOTOR_X;
+	ultrasonicSensor[1].ly = DEFAULT_STICK_WIDTH;
+	ultrasonicSensor[1].lz = DEFAULT_STICK_WIDTH;
+	ultrasonicSensor[1].x = ultrasonicSensor[0].x + ultrasonicSensor[1].lx/2.0;
+	ultrasonicSensor[1].y = ultrasonicSensor[0].y;
+	ultrasonicSensor[1].z = ultrasonicSensor[0].z + ultrasonicSensor[0].lz / 2.0;
+	ultrasonicSensor[1].red = 1.;
+	ultrasonicSensor[1].green = 1.;
+	ultrasonicSensor[1].blue = 0.;
+
+	ultrasonicSensor[2].m = DEFAULT_ULTRASONICSENSOR_MASS;
+	ultrasonicSensor[2].lx = DEFAULT_ULTRASONICSENSOR_LENGTH;
+	ultrasonicSensor[2].ly = DEFAULT_ULTRASONICSENSOR_WIDTH;
+	ultrasonicSensor[2].lz = DEFAULT_ULTRASONICSENSOR_HEIGHT;
+	ultrasonicSensor[2].x = DEFAULT_ULTRASONICSENSOR_X;
+	ultrasonicSensor[2].y = DEFAULT_ULTRASONICSENSOR_Y;
+	ultrasonicSensor[2].z = DEFAULT_ULTRASONICSENSOR_Z;
+	ultrasonicSensor[2].red = 1.;
+	ultrasonicSensor[2].green = 1.;
+	ultrasonicSensor[2].blue = 0.;
 
 	
 }
@@ -349,6 +461,7 @@ void EV3SimulatorObj::setBall(MyLink *body1, MyLink *body2)
 void EV3SimulatorObj::makeRobot()
 {
 	mu.lock();
+	dMatrix3 R;
 	setBox(&EV3Block);
 	setCylinder(&wheelLeft);
 	setCylinder(&wheelRight);
@@ -361,11 +474,18 @@ void EV3SimulatorObj::makeRobot()
 	setBox(&touchSensorRight[2]);
 	setBox(&touchSensorLeft[3]);
 	setBox(&touchSensorRight[3]);
-	setBox(&gyroSensor);
+	setBox(&gyroSensor[0]);
+	dRFromAxisAndAngle(R, 0, 1, 0, DEFAULT_STICK_RADIUS);
+	dGeomSetRotation(gyroSensor[0].geom, R);
+	setBox(&gyroSensor[1]);
+	setBox(&gyroSensor[2]);
 	setBox(&colourSensor);
 	setBox(&mmotor);
+	setBox(&ultrasonicSensor[0]);
+	setBox(&ultrasonicSensor[1]);
+	setBox(&ultrasonicSensor[2]);
 
-	dMatrix3 R;
+	
 	dRFromAxisAndAngle(R, 1, 0, 0, M_PI/2);
 	dGeomSetRotation(wheelLeft.geom, R);
 	
@@ -378,9 +498,9 @@ void EV3SimulatorObj::makeRobot()
 	dGeomSetRotation(touchSensorRight[1].geom, R);
 
 
-	EV3Block.joint = dJointCreateFixed(world, 0);
-	dJointAttach(EV3Block.joint, EV3Block.body, 0);
-	dJointSetFixed(EV3Block.joint);
+	//EV3Block.joint = dJointCreateFixed(world, 0);
+	//dJointAttach(EV3Block.joint, EV3Block.body, 0);
+	//dJointSetFixed(EV3Block.joint);
 
 	setHinge(&wheelLeft, &EV3Block);
 	setHinge(&wheelRight, &EV3Block);
@@ -397,8 +517,11 @@ void EV3SimulatorObj::makeRobot()
 
 	setSlider(&touchSensorLeft[3], &touchSensorLeft[2]);
 	setSlider(&touchSensorRight[3], &touchSensorRight[2]);
-	setFixed(&gyroSensor, &EV3Block);
+	setFixed(&gyroSensor[0], &EV3Block);
+	setFixed(&gyroSensor[1], &gyroSensor[0]);
+	setFixed(&gyroSensor[2], &gyroSensor[1]);
 	setFixed(&colourSensor, &EV3Block);
+
 	
 
 	double KP = DEFAULT_SPRINFG_VALUE;
@@ -417,6 +540,12 @@ void EV3SimulatorObj::makeRobot()
 	dJointSetSliderParam(touchSensorRight[3].joint, dParamStopCFM, cfm);
 
 	setFixed(&mmotor, &EV3Block);
+	setHinge(&ultrasonicSensor[0], &mmotor);
+	setFixed(&ultrasonicSensor[1], &ultrasonicSensor[0]);
+	setFixed(&ultrasonicSensor[2], &ultrasonicSensor[1]);
+
+	ultrasonicSensor_ray = dCreateRay(space, 2);
+	colourSensor_ray = dCreateRay(space, 2);
 	
 	pause = true;
 
@@ -437,13 +566,21 @@ void EV3SimulatorObj::m_nearCallback(dGeomID o1, dGeomID o2)
   dBodyID b1 = dGeomGetBody(o1), b2 = dGeomGetBody(o2);
   if (b1 && b2 && dAreConnectedExcluding(b1,b2,dJointTypeContact)) return;
   if (b1 && b2 && dAreConnected(b1,b2)) return;
-  if ((o1 != ground) && (o2 != ground)) return;
+  //if ((o1 != ground) && (o2 != ground)) return;
  
    static const int N = 20;
 	dContact contact[N];
 	int n = dCollide(o1,o2,N,&contact[0].geom,sizeof(dContact));
 
 	
+	if (o1 == ultrasonicSensor_ray || o2 == ultrasonicSensor_ray){
+			ev3.calcUltrasonicSensorDistance(contact[0].geom.pos[0], contact[0].geom.pos[1], contact[0].geom.pos[2]);
+			return;
+		}
+	if (o1 == colourSensor_ray || o2 == colourSensor_ray){
+		//ev3.calcColourSensorDistance(contact[0].geom.pos[0], contact[0].geom.pos[1], contact[0].geom.pos[2]);
+		return;
+	}
 
 	if (n > 0) {
 		for (int i=0; i<n; i++) {
@@ -515,6 +652,22 @@ void EV3SimulatorObj::controlSlider(MyLink *body, dReal length)
 */
 void EV3SimulatorObj::control()
 {
+	double vx = ev3.target_vx;
+	double va = ev3.target_va;
+	double wheel_distance = (wheelLeft.y - wheelRight.y)/2.0;
+	double wheel_radius = wheelLeft.lx;
+
+	double right_motor_speed = (vx + va*wheel_distance) / wheel_radius;
+	double left_motor_speed = (vx - va*wheel_distance) / wheel_radius;
+
+	
+	dJointSetHingeParam(wheelLeft.joint, dParamVel, left_motor_speed);
+	dJointSetHingeParam(wheelLeft.joint, dParamFMax, 20.);
+
+	dJointSetHingeParam(wheelRight.joint, dParamVel, right_motor_speed);
+	dJointSetHingeParam(wheelRight.joint, dParamFMax, 20.);
+
+	controlHinge(&ultrasonicSensor[0], ev3.target_mangle);
 	/*
 
 	dReal r2 = dJointGetHingeAngle (link2.joint);
@@ -526,6 +679,28 @@ void EV3SimulatorObj::control()
 }
 
 /**
+*@brief 超音波距離センサを設定
+*/
+void EV3SimulatorObj::setUltrasonicSensorRay()
+{
+	dVector3 pos0, pos1;
+	dBodyGetRelPointPos(ultrasonicSensor[2].body, 0, 0, 0, pos0);
+	dBodyGetRelPointPos(ultrasonicSensor[2].body, 0, 0, -DEFAULT_MAX_ULTRASONICSENSOR_DISTANCE, pos1);
+	ev3.setUltrasonicSensorPos(pos0[0], pos0[1], pos0[2]);
+	std::cout << "pos0\t" << pos0[0] << "\t" << pos0[1] << "\t" << pos0[2] << std::endl;
+	std::cout << "pos1\t" << pos1[0] << "\t" << pos1[1] << "\t" << pos1[2] << std::endl;
+	dGeomRaySet(ultrasonicSensor_ray, pos0[0], pos0[1], pos0[2], pos1[0] - pos0[0], pos1[1] - pos0[1], pos1[2] - pos0[2]);
+	
+}
+/**
+*@brief カラーセンサを設定
+*/
+void EV3SimulatorObj::setColourSensorRay()
+{
+
+}
+
+/**
 *@brief 更新
 */
 void EV3SimulatorObj::update()
@@ -533,7 +708,11 @@ void EV3SimulatorObj::update()
 	if(pause)
 	{
 		mu.lock();
-		control(); 
+		control();
+
+		setUltrasonicSensorRay();
+		setColourSensorRay();
+
 		dSpaceCollide(space,0,&nearCallback);
 		dWorldStep(world, st);
 		dJointGroupEmpty(contactgroup);
@@ -549,17 +728,81 @@ void EV3SimulatorObj::destroyRobot()
 {
 	mu.lock();
 	pause = false;
-	//dJointDestroy(EV3Block.joint);
+	dJointDestroy(touchSensorLeft[0].joint);
+	dJointDestroy(touchSensorLeft[1].joint);
+	dJointDestroy(touchSensorLeft[2].joint);
+	dJointDestroy(touchSensorLeft[3].joint);
+
+	dJointDestroy(touchSensorRight[0].joint);
+	dJointDestroy(touchSensorRight[1].joint);
+	dJointDestroy(touchSensorRight[2].joint);
+	dJointDestroy(touchSensorRight[3].joint);
+
+	dJointDestroy(gyroSensor[0].joint);
+	dJointDestroy(gyroSensor[1].joint);
+	dJointDestroy(gyroSensor[2].joint);
+
+	dJointDestroy(ultrasonicSensor[0].joint);
+	dJointDestroy(ultrasonicSensor[1].joint);
+	dJointDestroy(ultrasonicSensor[2].joint);
+
+	dJointDestroy(mmotor.joint);
+	dJointDestroy(colourSensor.joint);
+
 	dJointDestroy(wheelLeft.joint);
 	dJointDestroy(wheelRight.joint);
 	dJointDestroy(wheelBall.joint);
 
+	dBodyDestroy(mmotor.body);
+	dBodyDestroy(colourSensor.body);
 
-	dBodyDestroy(EV3Block.body);
+	dBodyDestroy(gyroSensor[0].body);
+	dBodyDestroy(gyroSensor[1].body);
+	dBodyDestroy(gyroSensor[2].body);
+
+	dBodyDestroy(ultrasonicSensor[0].body);
+	dBodyDestroy(ultrasonicSensor[1].body);
+	dBodyDestroy(ultrasonicSensor[2].body);
+
+	dBodyDestroy(touchSensorLeft[0].body);
+	dBodyDestroy(touchSensorLeft[1].body);
+	dBodyDestroy(touchSensorLeft[2].body);
+	dBodyDestroy(touchSensorLeft[3].body);
+
+	dBodyDestroy(touchSensorRight[0].body);
+	dBodyDestroy(touchSensorRight[1].body);
+	dBodyDestroy(touchSensorRight[2].body);
+	dBodyDestroy(touchSensorRight[3].body);
+	
+
+	//dBodyDestroy(EV3Block.body);
 	dBodyDestroy(wheelLeft.body);
 	dBodyDestroy(wheelRight.body);
 	dBodyDestroy(wheelBall.body);
 
+	//dJointDestroy(plane.joint);
+	//dBodyDestroy(plane.body);
+	
 
 	mu.unlock();
+}
+
+void EV3SimulatorObj::makePlane(double lx, double ly, double lz)
+{
+	plane.m = 100;
+	plane.lx = lx;
+	plane.ly = ly;
+	plane.lz = lz;
+	plane.x = 0;
+	plane.y = 0;
+	plane.z = lz / 2.0;
+	plane.red = 0.;
+	plane.green = 1.;
+	plane.blue = 0.;
+
+	setBox(&plane);
+
+	plane.joint = dJointCreateFixed(world, 0);
+	dJointAttach(plane.joint, plane.body, 0);
+	dJointSetFixed(plane.joint);
 }
