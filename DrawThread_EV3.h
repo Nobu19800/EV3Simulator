@@ -21,13 +21,13 @@
 * @class DrawThread
 *@brief シミュレーションの描画をするスレッド
 */
-class DrawThread : public virtual coil::Task
+class DrawThread_EV3 : public virtual coil::Task
 {
 public:
 		/**
 		*@brief コンストラクタ
 		*/
-		DrawThread(EV3SimulatorObj *so, double dt);
+		DrawThread_EV3(EV3SimulatorObj *so, double dt);
 		
 		/**
 		*@brief スレッド実行関数
@@ -57,10 +57,18 @@ public:
 		*@brief 全ボディ描画
 		*/
 		void drawRobot();
+		/**
+		*@brief カメラ位置再設定
+		*/
+		void resetCameraPosition();
+		/**
+		*@brief カメラ位置再設定フラグを立てる
+		*/
+		void setRCPFlag();
 		
 
 		double fps;
-
+		bool RCP_flag;
 
 private:
 	EV3SimulatorObj *m_so;

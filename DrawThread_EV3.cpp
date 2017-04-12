@@ -1,5 +1,5 @@
 #include <fstream>
-#include "DrawThread.h"
+#include "DrawThread_EV3.h"
 #include "searchFile.h"
 #include <coil/stringutil.h>
 
@@ -13,13 +13,13 @@
 #define dsDrawTriangle    dsDrawTriangleD
 #endif
 
-DrawThread *obj = NULL;
+DrawThread_EV3 *obj = NULL;
 
 
 /**
 *@brief シミュレーションの描画をするスレッドのコンストラクタ
 */
-DrawThread::DrawThread(EV3SimulatorObj *so, double dt)
+DrawThread_EV3::DrawThread_EV3(EV3SimulatorObj *so, double dt)
 {
 	m_so = so;
 	
@@ -29,6 +29,7 @@ DrawThread::DrawThread(EV3SimulatorObj *so, double dt)
 	fps = 1.0 / dt;
 
 	obj = this;
+	RCP_flag = false;
 }
 
 /**
@@ -48,6 +49,7 @@ void simLoop(int pause)
 	if(obj)
 	{
 		obj->drawRobot();
+		obj->resetCameraPosition();
 	}
 }
 
@@ -59,8 +61,8 @@ void simLoop(int pause)
 void start()
 {
   //float xyz[3] = {  .0f,  1.0f, 3.0f};  
-  float xyz[3] = {  0.5f,  -0.0f, 0.25f}; 
-  float hpr[3] = {180.0f, -10.0f, 0.0f};  
+  float xyz[3] = {  -0.5f,  -0.0f, 0.25f}; 
+  float hpr[3] = {-180.0f, -10.0f, 0.0f};  
   //float hpr[3] = {0.0f, -90.0f, 90.0f}; 
   //float xyz[3] = {  5.0f,  -5.0f, 3.0f};
   //float hpr[3] = {180.0f, -10.0f, 0.0f};
@@ -77,7 +79,7 @@ void start()
 *@brief スレッド実行関数
 * @return
 */
-int DrawThread::svc()
+int DrawThread_EV3::svc()
 {
 	int argc = 0;
 	char *argv[] = {""};
@@ -91,7 +93,7 @@ int DrawThread::svc()
 /**
 *@brief DrawStuff初期化
 */
-void DrawThread::setDrawStuff()
+void DrawThread_EV3::setDrawStuff()
 {
 	fn.version = DS_VERSION;
   fn.start   = &start;
@@ -119,7 +121,7 @@ void DrawThread::setDrawStuff()
 *@brief 直方体描画
 * @param body ボディオブジェクト
 */
-void DrawThread::drawBox(MyLink *body)
+void DrawThread_EV3::drawBox(MyLink *body)
 {
 	const double sides[3] = {body->lx, body->ly, body->lz};
 	dsSetColorAlpha(body->red,body->green,body->blue,1.0);
@@ -131,7 +133,7 @@ void DrawThread::drawBox(MyLink *body)
 *@brief 円柱描画
 * @param body ボディオブジェクト
 */
-void DrawThread::drawCylinder(MyLink *body)
+void DrawThread_EV3::drawCylinder(MyLink *body)
 {
 	dsSetColorAlpha(body->red,body->green,body->blue,1.0);
 	dsDrawCylinderD(dBodyGetPosition(body->body),
@@ -143,7 +145,7 @@ void DrawThread::drawCylinder(MyLink *body)
 *@brief 球描画
 * @param body ボディオブジェクト
 */
-void DrawThread::drawSphere(MyLink *body)
+void DrawThread_EV3::drawSphere(MyLink *body)
 {
 	dsSetColorAlpha(body->red, body->green, body->blue, 1.0);
 	dsDrawSphereD(dBodyGetPosition(body->body),
@@ -153,7 +155,7 @@ void DrawThread::drawSphere(MyLink *body)
 /**
 *@brief 全ボディ描画
 */
-void DrawThread::drawRobot()
+void DrawThread_EV3::drawRobot()
 {
 	if(m_so->pause)
 	{
@@ -186,12 +188,54 @@ void DrawThread::drawRobot()
 		drawBox(&m_so->ultrasonicSensor[1]);
 		drawBox(&m_so->ultrasonicSensor[2]);
 
-		const double pos0[3] = { m_so->ev3.current_ultrasonicSensor_x, m_so->ev3.current_ultrasonicSensor_y, m_so->ev3.current_ultrasonicSensor_z };
+		/*const double pos0[3] = { m_so->ev3.current_ultrasonicSensor_x, m_so->ev3.current_ultrasonicSensor_y, m_so->ev3.current_ultrasonicSensor_z };
 		const double pos1[3] = { m_so->ev3.current_ultrasonicSensor_x, m_so->ev3.current_ultrasonicSensor_y, m_so->ev3.current_ultrasonicSensor_z - m_so->ev3.current_ultrasonicSensorData };
-		dsDrawLine(pos0, pos1);
+		dsDrawLine(pos0, pos1);*/
 
-		//drawBox(&m_so->plane);
+		if (m_so->plane_exist)
+		{
+			drawBox(&m_so->plane);
+		}
+
+		for (std::vector<MyLink>::iterator itr = m_so->blocks.begin(); itr != m_so->blocks.end(); ++itr) {
+			drawBox(&(*itr));
+		}
 
 		m_so->mu.unlock();
 	}
+}
+
+
+
+/**
+*@brief カメラ位置再設定
+*/
+void DrawThread_EV3::resetCameraPosition()
+{
+	m_so->mu.lock();
+	if (RCP_flag)
+	{
+		const dReal *pos = dBodyGetPosition(m_so->EV3Block.body);
+		float xyz[3] = { -0.3f + pos[0], 0.3f + pos[1], 0.2f + pos[2] };
+		float hpr[3] = { -40.0f, -30.0f, 0.0f };
+		dsSetViewpoint(xyz, hpr);
+		dsSetSphereQuality(3);
+		dsSetCapsuleQuality(6);
+
+
+		RCP_flag = false;
+
+	}
+	m_so->mu.unlock();
+}
+
+
+/**
+*@brief カメラ位置再設定フラグを立てる
+*/
+void DrawThread_EV3::setRCPFlag()
+{
+	m_so->mu.lock();
+	RCP_flag = true;
+	m_so->mu.unlock();
 }

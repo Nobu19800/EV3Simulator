@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
 
-project (EV3Simulator)
+project (RasPiMouseSimulator)
 
 
 set(ODE_DIRECTORIY ${ODE_DIRECTORIY} CACHE PATH "set ODE_DIRECTORIY ")
@@ -76,7 +76,7 @@ link_directories(${ODEDir}/lib/Release)
 link_directories(${ODEDir}/lib/Debug)
 
 
-add_executable (EV3Simulator EV3Simulator.cpp EV3SimulatorObj.cpp EV3SimulatorObj.h DrawThread.h DrawThread.cpp searchFile.cpp searchFile.h ${ODEDir}/drawstuff/src/resources.rc)
+add_executable (RasPiMouseSimulator RasPiMouseSimulator.cpp RasPiMouseSimulatorObj.cpp RasPiMouseSimulatorObj.h DrawThread_RasPiMouse.h DrawThread_RasPiMouse.cpp searchFile.cpp searchFile.h ${ODEDir}/drawstuff/src/resources.rc)
 
-target_link_libraries(EV3Simulator ${OPENRTM_LIBRARIES} ${ODELIB} shlwapi.lib)
+target_link_libraries(RasPiMouseSimulator ${OPENRTM_LIBRARIES} ${ODELIB} shlwapi.lib)
 

@@ -124,6 +124,8 @@
 #define DEFAULT_MAX_ULTRASONICSENSOR_DISTANCE 100.0
 
 
+#define DEFAULT_BLOCK_MASS 100
+
 
 #ifdef _MSC_VER
 #pragma warning(disable:4244 4305)  // for VC++, no precision loss complaints
@@ -155,13 +157,22 @@ class EV3Obj
 {
 public:
 	EV3Obj();
+	void setTargetVelocity(double vx, double va);
+	void setCurrentPosition(double px, double py, double pa);
 	void setUltrasonicSensorPos(double x, double y, double z);
 	void setColourSensorPos(double x, double y, double z);
 	double calcUltrasonicSensorDistance(double x, double y, double z);
 	double calcColourSensorDistance(double x, double y, double z);
-	double target_vx, target_vy, target_va;
-	double target_mangle;
+	void resetUltrasonicSensorDistance();
+	void resetColourSensorDistance();
+	bool getRightTouch(double limit);
+	bool getLeftTouch(double limit);
+	double target_vx, target_va;
+	double current_px, current_py, current_pa;
+	double gyro_data;
+	double target_mangle, velocity_mmotor;
 	double current_ultrasonicSensorData, current_colourSensorData;
+	double right_touch_value, left_touch_value;
 	bool right_touch, left_touch;
 	double current_ultrasonicSensor_x, current_ultrasonicSensor_y, current_ultrasonicSensor_z;
 	double current_colourSensor_x, current_colourSensor_y, current_colourSensor_z;
@@ -185,6 +196,7 @@ public:
 	MyLink EV3Block, wheelLeft, wheelRight, wheelBall, touchSensorLeft[4], touchSensorRight[4], gyroSensor[3], colourSensor, mmotor, ultrasonicSensor[3];
 	dGeomID ultrasonicSensor_ray, colourSensor_ray;
 	std::vector<MyLink> blocks;
+	bool plane_exist;
 	MyLink plane;
 	double st;
 	double gravity;
@@ -194,6 +206,7 @@ public:
 	dGeomID       ground;       
 	dJointGroupID contactgroup;
 	EV3Obj ev3;
+
 	
 	/**
 	*@brief 超音波距離センサを設定
@@ -205,8 +218,9 @@ public:
 	void setColourSensorRay();
 	/**
 	*@brief 各パラメータの初期化を行う
+	*@param offset_z 高さを調整
 	*/
-	void makeParam();
+	void makeParam(double offset_z=0);
 	/**
 	*@brief 直方体作成
 	* @param body ボディオブジェクト
@@ -257,6 +271,13 @@ public:
 	*/
 	void controlHinge(MyLink *body, dReal theta);
 	/**
+	*@brief ヒンジジョイント制御
+	* @param body ボディオブジェクト
+	* @param theta ヒンジジョイントの位置
+	* @param vel ヒンジジョイントの速度
+	*/
+	void controlHinge(MyLink *body, dReal theta, dReal vel);
+	/**
 	*@brief スライダージョイント制御
 	* @param body ボディオブジェクト
 	* @param length スライダージョイントの位置
@@ -281,18 +302,28 @@ public:
 	* @param o2 ジオメトリ2
 	*/
 	void m_nearCallback(dGeomID o1, dGeomID o2);
+	/**
+	*@brief 刻み幅設定
+	* @param s サンプリング時間
+	*/
+	void setSamplingTime(double s);
 
 
 	/**
 	*@brief 地面生成
 	*/
-	void makePlane(double lx, double ly, double lz);
+	void makePlane(double x, double y, double lx, double ly, double lz);
 
 	/**
 	*@brief 障害物生成
 	*/
-	void makeBlock(double x, double y, double lx, double ly, double lz, double r);
+	void makeBlock(double x, double y, double z, double lx, double ly, double lz, double r);
 
+	/**
+	*@brief ファイルから障害物は位置読み込み
+	*@return 読み込み成功(true)、失敗(false)
+	*/
+	bool loadBlocksData(std::string fname);
 
 
 };
